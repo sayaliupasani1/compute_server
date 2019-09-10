@@ -3,6 +3,7 @@ from flask import Flask
 from flask import request
 from flask import render_template
 import json
+import pandas as pd
 
 
 docker_client = docker.from_env()
@@ -16,9 +17,15 @@ app = Flask(__name__)
 def landing_page():
 	return render_template('landing.html')
 
-@app.route('/listcontainers')
+@app.route('/listOfContainers.html')
 def listcon():
-		render_template('listOfContainers.html')
+	container_dict = {}
+	container_list = docker_api.containers(trunc=True)
+	for x in container_list:
+		container_dict[x['Id']] = {"Container_Id":x['Id'], "Image":x['Image'], "Container_Name":x['Names'], "Port":x['Ports'][0]['PublicPort']}
+		df = pd.DataFrame(container_dict)
+		df_html = df.to_html()
+	return render_template('listOfContainers.html', table_html=df_html)
 
 @app.route('/containerdetails.html', methods=['GET', 'POST'])
 def get_containerdetails():
