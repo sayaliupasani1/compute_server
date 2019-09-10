@@ -1,8 +1,12 @@
 <html>
 <body>
-	<h1> Hey, here are the bunch of things you can do: </h1>
 	<button onclick="location.href = 'listOfContainers.html';" id="myButton1" class="float-left submit-button" >List your containers</button>
 	<button onclick="location.href = 'containerdetails.html';" id="myButton2" class="float-left submit-button" >Create a new container service</button>
 	<button onclick="location.href = 'deletecontainer.html';" id="myButton3" class="float-left submit-button" >Delete your existing container </button>
+	<h3> Input below the truncated ID of the container to be stopped/deleted: </h3>
+	<form method="POST">
+		Container_ID: <input type="text" name="container_id">
+		<input type="submit" value="submit">
+    </form>
 </body>
 </html>

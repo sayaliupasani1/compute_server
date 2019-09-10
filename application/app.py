@@ -20,6 +20,7 @@ def landing_page():
 @app.route('/listOfContainers.html')
 def listcon():
 	container_dict = {}
+	df_html = "You have no running containers currently."
 	container_list = docker_api.containers(trunc=True)
 	for x in container_list:
 		container_dict[x['Id']] = {"Container_Id":x['Id'], "Image":x['Image'], "Container_Name":x['Names'], "Port":x['Ports'][0]['PublicPort']}
@@ -40,7 +41,7 @@ def get_containerdetails():
 			return render_template('created_container.html', image=image, container_name=container_data[0], container_port=container_data[1])
 		elif image_name == 'apache':
 			image = 'httpd:latest'
-			create_container(image)
+			container_data = create_container(image)
 			return render_template('created_container.html', image=image, container_name=container_data[0], container_port=container_data[1])
 
 def create_container(image):
@@ -50,6 +51,16 @@ def create_container(image):
 	print(container_name)
 	print(container_port)
 	return container_name, container_port
+
+@app.route('/deletecontainer.html', methods=['GET', 'POST'])
+def deletecontainer():
+	if request.method == 'GET':
+		return render_template('containertodelete.html')
+	if request.method == 'POST':
+		container_id = request.form['container_id']
+		cont_obj = docker_client.containers.get(container_id)
+		cont_obj.stop()
+		return render_template('deletecontainer.html')
 
 
 if __name__=='__main__':
