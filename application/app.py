@@ -4,6 +4,7 @@ from flask import request
 from flask import render_template
 import json
 import pandas as pd
+import random
 
 
 docker_client = docker.from_env()
@@ -12,6 +13,7 @@ docker_client = docker.from_env()
 docker_api = docker.APIClient(base_url=None) 
 
 app = Flask(__name__)
+assigned_ports = []
 
 @app.route('/')
 def landing_page():
@@ -45,7 +47,12 @@ def get_containerdetails():
 			return render_template('created_container.html', image=image, container_name=container_data[0], container_port=container_data[1])
 
 def create_container(image):
-	container = docker_client.containers.run(image, ports = {22:2222}, detach=True, remove=True)
+	for i in range(1025, 49152):
+		port = random.randint(1025, 49152)
+		if port not in assigned_ports:
+			assigned_ports.append(port)
+			break
+	container = docker_client.containers.run(image, ports = {22:port}, detach=True, remove=True)
 	container_name = container.name
 	container_port = docker_api.inspect_container(container.id)['NetworkSettings']['Ports']['22/tcp']
 	print(container_name)
