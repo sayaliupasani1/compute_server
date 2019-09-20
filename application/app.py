@@ -1,11 +1,14 @@
 import docker
+from flask import *
 from flask import Flask
-from flask import request
+from flask import request, redirect, make_response
 from flask import render_template
+import urllib
 import json
 import pandas as pd
 import random
-
+import requests
+from authenticator import Keycloak as kc
 
 docker_client = docker.from_env()
 
@@ -16,8 +19,39 @@ app = Flask(__name__)
 assigned_ports = []
 
 @app.route('/')
-def landing_page():
-	return render_template('landing.html')
+def landing():
+	if request.cookies.get('access_token') and request.cookies.get('username'):
+		#print('access_token present')
+		access_token = request.cookies.get('access_token')
+		refresh_token = request.cookies.get('refresh_token')
+		username = request.cookies.get('username')
+		#print('Refresh token in login func: {}'.format(refresh_token))
+		verification_code, verification_value = kc().verify_signature(access_token, refresh_token)
+		#print('verification_value:{}'.format(verification_value))
+		if verification_code == 'username' and verification_value == username:
+			return render_template('landing.html')
+		elif verification_code == 'access_token_new':
+			return 'This is new access token'
+		elif verification_code == 'authenticate':
+			return redirect(url_for('login'))
+	else:
+		auth_url = kc().authenticate_user()
+		return redirect(auth_url)
+
+@app.route('/login')
+def login():
+	print('This is landing page decorator function')
+	session_state = request.args.get('session_state')
+	auth_code = request.args.get('code')
+	print(auth_code)
+	access_token, refresh_token, username = kc().get_access_token(auth_code)
+	response = make_response(render_template('landing.html'))
+	response.set_cookie('access_token', access_token)
+	response.set_cookie('refresh_token', refresh_token)
+	response.set_cookie('username', username)
+	#print('Access token in landing page func:{}'.format(access_token))
+	#print('Refresh token in landing page func:{}'.format(refresh_token))
+	return response
 
 @app.route('/listOfContainers.html')
 def listcon():
