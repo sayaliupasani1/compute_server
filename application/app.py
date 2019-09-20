@@ -27,11 +27,15 @@ def landing():
 		username = request.cookies.get('username')
 		#print('Refresh token in login func: {}'.format(refresh_token))
 		verification_code, verification_value = kc().verify_signature(access_token, refresh_token)
-		#print('verification_value:{}'.format(verification_value))
+		print('verification_value:{}'.format(verification_value))
 		if verification_code == 'username' and verification_value == username:
 			return render_template('landing.html')
 		elif verification_code == 'access_token_new':
-			return 'This is new access token'
+			print('This is new access token')
+			access_token_new = verification_value
+			response = make_response(redirect(url_for('landing')))
+			response.set_cookie('access_token', access_token_new)
+			return response
 		elif verification_code == 'authenticate':
 			return redirect(url_for('login'))
 	else:
@@ -41,17 +45,21 @@ def landing():
 @app.route('/login')
 def login():
 	print('This is landing page decorator function')
-	session_state = request.args.get('session_state')
-	auth_code = request.args.get('code')
-	print(auth_code)
-	access_token, refresh_token, username = kc().get_access_token(auth_code)
-	response = make_response(render_template('landing.html'))
-	response.set_cookie('access_token', access_token)
-	response.set_cookie('refresh_token', refresh_token)
-	response.set_cookie('username', username)
-	#print('Access token in landing page func:{}'.format(access_token))
-	#print('Refresh token in landing page func:{}'.format(refresh_token))
-	return response
+	if request.args.get('code'):
+		session_state = request.args.get('session_state')
+		auth_code = request.args.get('code')
+		print('Authorization code:{}'.format(auth_code))
+		access_token, refresh_token, username = kc().get_access_token(auth_code)
+		response = make_response(render_template('landing.html'))
+		response.set_cookie('access_token', access_token)
+		response.set_cookie('refresh_token', refresh_token)
+		response.set_cookie('username', username)
+		#print('Access token in landing page func:{}'.format(access_token))
+		#print('Refresh token in landing page func:{}'.format(refresh_token))
+		return response
+	else:
+		auth_url = kc().authenticate_user()
+		return redirect(auth_url)
 
 @app.route('/listOfContainers.html')
 def listcon():
