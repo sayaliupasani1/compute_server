@@ -67,9 +67,9 @@ def listcon():
 	df_html = "You have no running containers currently."
 	container_list = docker_api.containers(trunc=True)
 	for x in container_list:
-		print(x)
-		print('done')
-		container_dict[x['Id']] = {"Container_Id":x['Id'], "Image":x['Image'], "Container_Name":x['Names'], "Port":x['Ports'][0]['PublicPort']}
+		public_port_list = [d['PublicPort'] for d in x['Ports'] if 'PublicPort' in d]
+		public_port = public_port_list[0]
+		container_dict[x['Id']] = {"Container_Id":x['Id'], "Image":x['Image'], "Container_Name":x['Names'], "Port":public_port}
 		df = pd.DataFrame(container_dict)
 		df_html = df.to_html()
 	return render_template('listOfContainers.html', table_html=df_html)
