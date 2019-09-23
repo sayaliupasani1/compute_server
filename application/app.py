@@ -27,11 +27,11 @@ def landing():
 		username = request.cookies.get('username')
 		#print('Refresh token in login func: {}'.format(refresh_token))
 		verification_code, verification_value = kc().verify_signature(access_token, refresh_token)
-		print('verification_value:{}'.format(verification_value))
+		#print('verification_value:{}'.format(verification_value))
 		if verification_code == 'username' and verification_value == username:
 			return render_template('landing.html')
 		elif verification_code == 'access_token_new':
-			print('This is new access token')
+			#print('This is new access token')
 			access_token_new = verification_value
 			response = make_response(redirect(url_for('landing')))
 			response.set_cookie('access_token', access_token_new)
@@ -44,11 +44,11 @@ def landing():
 
 @app.route('/login')
 def login():
-	print('This is landing page decorator function')
+	print('This is login func')
 	if request.args.get('code'):
 		session_state = request.args.get('session_state')
 		auth_code = request.args.get('code')
-		print('Authorization code:{}'.format(auth_code))
+		#print('Authorization code:{}'.format(auth_code))
 		access_token, refresh_token, username = kc().get_access_token(auth_code)
 		response = make_response(render_template('landing.html'))
 		response.set_cookie('access_token', access_token)
@@ -67,6 +67,8 @@ def listcon():
 	df_html = "You have no running containers currently."
 	container_list = docker_api.containers(trunc=True)
 	for x in container_list:
+		print(x)
+		print('done')
 		container_dict[x['Id']] = {"Container_Id":x['Id'], "Image":x['Image'], "Container_Name":x['Names'], "Port":x['Ports'][0]['PublicPort']}
 		df = pd.DataFrame(container_dict)
 		df_html = df.to_html()
@@ -97,8 +99,8 @@ def create_container(image):
 	container = docker_client.containers.run(image, ports = {22:port}, detach=True, remove=True)
 	container_name = container.name
 	container_port = docker_api.inspect_container(container.id)['NetworkSettings']['Ports']['22/tcp']
-	print(container_name)
-	print(container_port)
+	#print(container_name)
+	#print(container_port)
 	return container_name, container_port
 
 @app.route('/deletecontainer.html', methods=['GET', 'POST'])
@@ -110,6 +112,12 @@ def deletecontainer():
 		cont_obj = docker_client.containers.get(container_id)
 		cont_obj.stop()
 		return render_template('deletecontainer.html')
+
+@app.route('/logout')
+def logout():
+	print('you hit flask logout func')
+	logout_uri = kc().logout_user()
+	return redirect(logout_uri)
 
 
 if __name__=='__main__':
