@@ -2,6 +2,7 @@ import requests
 import json
 import urllib
 from keycloak_params import *
+import jwt
 
 class Keycloak(object):
 
@@ -65,6 +66,28 @@ class Keycloak(object):
 			verification_code = 'authenticate'
 			verification_value = 'Null'
 			return verification_code, verification_value
+
+	def verify_login(self, token):
+		jwk_uri = 'http://localhost:8080/auth/realms/compute_server/protocol/openid-connect/certs'
+		jwks = requests.get(jwk_uri).json()
+		#print('This is jwks:{}'.format(jwks))
+		public_keys = {}
+		for jwk in jwks['keys']:
+			kid = jwk['kid']
+			public_keys[kid] = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(jwk))
+		#print('This is public key dict:{}'.format(public_keys))
+		kid = jwt.get_unverified_header(token)['kid']
+		key = public_keys[kid]
+		#print('This is key:{}'.format(key))
+		try:
+			jwt_decode = jwt.decode(token, key=key, audience ='compute_server')
+			print(jwt_decode)
+			result = True
+		except:
+			result = False
+
+		return result
+
 
 	def logout_user(self):
 		print('You hit kc logout user func')
