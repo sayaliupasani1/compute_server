@@ -62,7 +62,12 @@ def login():
 		return redirect(auth_url)
 
 @app.route('/listOfContainers.html')
-def listcon():
+def listcon(): 
+	if request.cookies.get('access_token'):
+		token = request.cookies.get('access_token')
+		print('Received token:{}'.format(token))
+		token_json = json.dumps(token)
+		print('Jsonified token:{}'.format(token_json))
 	container_dict = {}
 	df_html = "You have no running containers currently."
 	container_list = docker_api.containers(trunc=True)
@@ -99,8 +104,6 @@ def create_container(image):
 	container = docker_client.containers.run(image, ports = {22:port}, detach=True, remove=True)
 	container_name = container.name
 	container_port = docker_api.inspect_container(container.id)['NetworkSettings']['Ports']['22/tcp']
-	#print(container_name)
-	#print(container_port)
 	return container_name, container_port
 
 @app.route('/deletecontainer.html', methods=['GET', 'POST'])

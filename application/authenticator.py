@@ -1,18 +1,19 @@
 import requests
 import json
 import urllib
+from keycloak_params import *
 
 class Keycloak(object):
 
 	def authenticate_user(self):
 		print('This is authenticate user function')
-		params = {'client_id': 'compute_server', 'redirect_uri':'http://localhost:5000/login', 'response_type':'code'}
+		params = {'client_id': client_id, 'redirect_uri': auth_redirect_uri, 'response_type':'code'}
 		auth_url = 'http://localhost:8080/auth/realms/compute_server/protocol/openid-connect/auth?'
 		auth_endpoint_url = auth_url + urllib.parse.urlencode(params)
 		return auth_endpoint_url
 
 	def get_access_token(self, auth_code):
-		token_endpoint_params = {'grant_type':'authorization_code', 'code':auth_code, 'client_id':'compute_server', 'client_secret':'e853e2b4-004d-4a6a-bfce-dfd8bf0cbfc6', 'redirect_uri':'http://localhost:5000/login'}
+		token_endpoint_params = {'grant_type':'authorization_code', 'code':auth_code, 'client_id': client_id, 'client_secret': client_secret, 'redirect_uri':auth_redirect_uri}
 		tokens = requests.post('http://localhost:8080/auth/realms/compute_server/protocol/openid-connect/token', data=token_endpoint_params)
 		token_dict = json.loads(tokens.text)
 		#print('token dict:{}'.format(token_dict))
@@ -26,7 +27,7 @@ class Keycloak(object):
 		return access_token, refresh_token, username
 
 	def refresh_access_token(self, refresh_token):
-		refresh_token_endpoint_params = {'grant_type':'refresh_token', 'refresh_token':refresh_token, 'client_id':'compute_server', 'client_secret':'e853e2b4-004d-4a6a-bfce-dfd8bf0cbfc6'}
+		refresh_token_endpoint_params = {'grant_type':'refresh_token', 'refresh_token':refresh_token, 'client_id': client_id, 'client_secret':client_secret}
 		access_token_renewed = requests.post('http://localhost:8080/auth/realms/compute_server/protocol/openid-connect/token', data=refresh_token_endpoint_params)
 		access_token_dict = json.loads(access_token_renewed.text)
 		#print('access_token_dict:{}'.format(access_token_dict))
@@ -40,7 +41,7 @@ class Keycloak(object):
 	def verify_signature(self, access_token, refresh_token):
 		#print('this is in verify_signature')
 		#print(access_token)
-		introspect_data = {'token':access_token, 'client_id':'compute_server', 'client_secret':'e853e2b4-004d-4a6a-bfce-dfd8bf0cbfc6'}
+		introspect_data = {'token':access_token, 'client_id':client_id, 'client_secret': client_secret}
 		user_info = requests.post('http://localhost:8080/auth/realms/compute_server/protocol/openid-connect/token/introspect', data=introspect_data)
 		user_info_data = json.loads(user_info.text)
 		#print('user info in verify signature:{}'.format(user_info_data))
@@ -67,7 +68,7 @@ class Keycloak(object):
 
 	def logout_user(self):
 		print('You hit kc logout user func')
-		logout_endpoint_params = {'redirect_uri':'http://localhost:5000'}
+		logout_endpoint_params = {'redirect_uri': logout_redirect_uri}
 		logout_endpoint = 'http://localhost:8080/auth/realms/compute_server/protocol/openid-connect/logout?'
 		logout_uri = logout_endpoint + urllib.parse.urlencode(logout_endpoint_params)
 		return logout_uri
