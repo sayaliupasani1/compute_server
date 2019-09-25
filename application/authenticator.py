@@ -82,11 +82,9 @@ class Keycloak(object):
 		try:
 			jwt_decode = jwt.decode(token, key=key, audience ='compute_server')
 			print(jwt_decode)
-			result = True
+			return True
 		except:
-			result = False
-
-		return result
+			return False
 
 
 	def logout_user(self):

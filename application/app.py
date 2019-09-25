@@ -123,7 +123,11 @@ def deletecontainer():
 def logout():
 	print('you hit flask logout func')
 	logout_uri = kc().logout_user()
-	return redirect(logout_uri)
+	logout_response = redirect(logout_uri)
+	logout_response.set_cookie('username', expires=0)
+	logout_response.set_cookie('access_token', expires=0)
+	logout_response.set_cookie('refresh_token', expires=0)
+	return logout_response
 
 
 if __name__=='__main__':
