@@ -40,13 +40,9 @@ def landing():
         access_token = request.cookies.get('access_token')
         refresh_token = request.cookies.get('refresh_token')
         username = request.cookies.get('username')
-        # The verification can result in one of the following: access token
-        # valid, refresh token valid, need to re-authenticate user
         verification_code, verification_value = kc().verify_signature(access_token, refresh_token)
         if verification_code == 'username' and verification_value == username:
             return render_template('landing.html')
-        # If refresh token is valid, users are served with the requested page
-        # along with setting a new access token
         elif verification_code == 'access_token_new':
             access_token_new = verification_value
             response = make_response(redirect(url_for('landing')))
@@ -79,7 +75,6 @@ def login():
         # and refresh tokens
         access_token, refresh_token, username = kc().get_access_token(auth_code)
         response = make_response(render_template('landing.html'))
-        # Set the tokens as cookies in the response
         response.set_cookie('access_token', access_token)
         response.set_cookie('refresh_token', refresh_token)
         response.set_cookie('username', username)
@@ -103,8 +98,6 @@ def listcon():
     if request.cookies.get('access_token'):
         token = request.cookies.get('access_token')
         verify_token = kc().verify_login(token)
-        # If access token is valid, verify_login function returns True, and the
-        # container list is calculated and served
         if verify_token:
             container_dict = {}
             df_html = "You have no running containers currently."
@@ -134,7 +127,6 @@ def get_containerdetails():
         image_name = request.form['image_name']
         if image_name == 'ubuntu': # Currently, users are being provided with only two image options
             image = 'rastasheep/ubuntu-sshd:16.04'
-            # Call create_container function to create a container using specified image/requirements
             container_data = create_container(image)
             return render_template('created_container.html', image=image, container_name=container_data[0], container_port=container_data[1])
         elif image_name == 'apache':
@@ -150,8 +142,6 @@ def create_container(image):
     relevant port to drop into SSH shell of their container.
     It returns the container details that are being displayed to the user.
     """
-    # The for loop is to decide the host port. The already assigned ports are
-    # tracked in the list.
     for i in range(1025, 49152):
         port = random.randint(1025, 49152)
         if port not in assigned_ports:
@@ -162,7 +152,6 @@ def create_container(image):
     # The remove flag ensures to remove the container after it has been stopped
     container = docker_client.containers.run(image, ports={22:port}, detach=True, remove=True)
     container_name = container.name
-    # Inspect the created container for specific details to be provided to the user
     container_port = docker_api.inspect_container(container.id)['NetworkSettings']['Ports']['22/tcp']
     return container_name, container_port
 
@@ -179,7 +168,6 @@ def deletecontainer():
         container_id = request.form['container_id']
         # Create a container object for specified container ID
         cont_obj = docker_client.containers.get(container_id)
-        # Stop the container using object
         cont_obj.stop()
         return render_template('deletecontainer.html')
 
