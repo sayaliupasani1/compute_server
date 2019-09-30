@@ -100,12 +100,12 @@ class Keycloak(object):
                                   data=introspect_data)
         user_info_data = json.loads(user_info.text)
         # If the access token is active, username is returned, which is cross verified with username cookie before serving the request.
-        if user_info_data['active'] == True:
+        if user_info_data['active'] is True:
             verification_value = user_info_data['username']
             verification_code = 'username'
             return verification_code, verification_value
             # If access token is expired and refresh token exists, call the refresh_access_token function
-        elif refresh_token != None:
+        elif refresh_token is not None:
             access_token_new = self.refresh_access_token(refresh_token)
             # The refresh_access_token function returns False if refresh token
             # is expired and user needs to be re-authenticated
@@ -142,11 +142,13 @@ class Keycloak(object):
         key = public_keys[kid]
         # The jwt decode throws an exception if it fails to verify signature. Catch the exception and authenticate user before serving the request.
         try:
-            jwt_decode = jwt.decode(token, key=key, audience ='{}'.format(realm))
+            jwt_decode = jwt.decode(token, key=key, audience='{}'.format(realm))
             print(jwt_decode)
-            return True
+            verify_user = jwt_decode['preferred_username']
+            print(verify_user)
+            return True, verify_user
         except:
-            return False
+            return False, verify_user
 
     def logout_user(self):
         """

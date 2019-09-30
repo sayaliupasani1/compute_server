@@ -95,20 +95,29 @@ def listcon():
     If the signature is expired, users are redirected to /login where pass
     through complete authentication process.
     """
-    if request.cookies.get('access_token'):
+    if request.cookies.get('access_token') and request.cookies.get('username'):
         token = request.cookies.get('access_token')
-        verify_token = kc().verify_login(token)
+        user = request.cookies.get('username')
+        verify_token, verify_user = kc().verify_login(token)
         if verify_token:
-            container_dict = {}
-            df_html = "You have no running containers currently."
-            container_list = docker_api.containers(trunc=True)
-            for x in container_list:
-                public_port_list = [d['PublicPort'] for d in x['Ports'] if 'PublicPort' in d]
-                public_port = public_port_list[0]
-                container_dict[x['Id']] = {"Container_Id":x['Id'], "Image":x['Image'], "Container_Name":x['Names'], "Port": public_port}
-            df = pd.DataFrame(container_dict)
-            df_html = df.to_html()
-            return render_template('listOfContainers.html', table_html=df_html)
+            if user == verify_user:
+                container_dict = {}
+                container_list = docker_api.containers(trunc=True, filters={"label": ["username={}".format(user)]})
+                if len(container_list) == 0:
+                    df_html = "You have no running containers currently."
+                else:
+                    print('Container list:{}'.format(container_list))
+                    for x in container_list:
+                        public_port_list = [d['PublicPort'] for d in x['Ports'] if 'PublicPort' in d]
+                        public_port = public_port_list[0]
+                        container_dict[x['Id']] = {"Container_Id":x['Id'], "Image": x['Image'],
+                                                   "Container_Name": x['Names'], "Port": public_port}
+                        print('List of container dict:{}'.format(container_dict))
+                    df = pd.DataFrame(container_dict)
+                    df_html = df.to_html()
+                return render_template('listOfContainers.html', table_html=df_html)
+            else:
+                return redirect(url_for('login'))
         if not verify_token:
             return redirect(url_for('login'))
     else:
@@ -120,23 +129,33 @@ def get_containerdetails():
     """
     This function takes container details as user input based on which, the container is created.
     """
-    if request.method == 'GET':
-        return render_template('containerDetails.html')
-    if request.method == 'POST':
-        #con_details = {}
-        image_name = request.form['image_name']
-        if image_name == 'ubuntu': # Currently, users are being provided with only two image options
-            image = 'rastasheep/ubuntu-sshd:16.04'
-            container_data = create_container(image)
-            return render_template('created_container.html', image=image, container_name=container_data[0], container_port=container_data[1])
-        elif image_name == 'apache':
-            image = 'httpd:latest'
-            container_data = create_container(image)
-            return render_template('created_container.html', image=image, container_name=container_data[0], container_port=container_data[1])
+    if request.cookies.get('access_token') and request.cookies.get('username'):
+        token = request.cookies.get('access_token')
+        user = request.cookies.get('username')
+        verify_token, verify_user = kc().verify_login(token)
+        if user == verify_user:
+            if request.method == 'GET':
+                return render_template('containerDetails.html')
+            elif request.method == 'POST':
+                #con_details = {}
+                image_name = request.form['image_name']
+                if image_name == 'ubuntu':  # Currently, users are being provided with only two image options
+                    image = 'rastasheep/ubuntu-sshd:16.04'
+                    container_data = create_container(image, user)
+                    return render_template('created_container.html', image=image, container_name=container_data[0], container_port=container_data[1])
+                elif image_name == 'apache':
+                    image = 'httpd:latest'
+                    container_data = create_container(image, user)
+                    return render_template('created_container.html', image=image, container_name=container_data[0], container_port=container_data[1])
+        else:
+            return redirect(url_for('login'))
+    else:
+        return redirect(url_for('login'))
 
 
-def create_container(image):
+def create_container(image, user):
     """
+
     This function is to create a container with specified image.
     The container is create with port forwarding on host so that user's can use
     relevant port to drop into SSH shell of their container.
@@ -150,7 +169,8 @@ def create_container(image):
     # Using docker-py for creating and managing docker containers - Below call
     # creates a container with specified image and port forwarding
     # The remove flag ensures to remove the container after it has been stopped
-    container = docker_client.containers.run(image, ports={22:port}, detach=True, remove=True)
+    container = docker_client.containers.run(image, ports={22: port},
+                                             labels={"username": user}, detach=True, remove=True)
     container_name = container.name
     container_port = docker_api.inspect_container(container.id)['NetworkSettings']['Ports']['22/tcp']
     return container_name, container_port
