@@ -106,13 +106,12 @@ def listcon():
                 if len(container_list) == 0:
                     df_html = "You have no running containers currently."
                 else:
-                    print('Container list:{}'.format(container_list))
                     for x in container_list:
                         public_port_list = [d['PublicPort'] for d in x['Ports'] if 'PublicPort' in d]
                         public_port = public_port_list[0]
                         container_dict[x['Id']] = {"Container_Id":x['Id'], "Image": x['Image'],
                                                    "Container_Name": x['Names'], "Port": public_port}
-                        print('List of container dict:{}'.format(container_dict))
+                        #print('List of container dict:{}'.format(container_dict))
                     df = pd.DataFrame(container_dict)
                     df_html = df.to_html()
                 return render_template('listOfContainers.html', table_html=df_html)
@@ -188,7 +187,12 @@ def deletecontainer():
         container_id = request.form['container_id']
         # Create a container object for specified container ID
         cont_obj = docker_client.containers.get(container_id)
+        hostPort = int([d['HostPort'] for d in cont_obj.ports['22/tcp']][0])
         cont_obj.stop()
+        if hostPort in assigned_ports:
+            assigned_ports.remove(hostPort)
+        else:
+            print('The host port did not exist in app list')
         return render_template('deletecontainer.html')
 
 

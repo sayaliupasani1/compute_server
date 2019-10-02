@@ -81,7 +81,6 @@ class Keycloak(object):
         access_token_dict = json.loads(access_token_renewed.text)
         # If the refresh token is expired, Keycloak gives an error. Catch that error and re-authenticate user.
         if access_token_dict.get('error', False):
-            print('Refresh token seems to be expired.. Authenticate again')
             return False
         else:
             access_token_new = access_token_dict['access_token']
