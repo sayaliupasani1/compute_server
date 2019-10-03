@@ -70,8 +70,8 @@ Following the OAuth2 standards, refresh tokens are used to renew an expired acce
 
 This project is still ongoing with below plans:
 
-1) Need to add a logic for filtering containers based on username and display the relavant ones per user.
-2) Implement a load balancer and distribute the compute system
-3) Add a bastion server for user's to access their container's over ssh. Currently, the app is using port forwards on its host.
-4) Containerize the app so that it is portable and can be deployed across multiple servers
-5) Codify using Terraform.
+- [x] Need to add a logic for filtering containers based on username and display the relavant ones per user.
+- [ ] Implement a load balancer and distribute the compute system
+- [ ] Add a bastion server for user's to access their container's over ssh. Currently, the app is using port forwards on its host.
+- [ ] Containerize the app so that it is portable and can be deployed across multiple servers
+- [ ] Codify using Terraform.
